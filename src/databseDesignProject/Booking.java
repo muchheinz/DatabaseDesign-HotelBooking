@@ -6,26 +6,23 @@ import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Date;
 import java.util.List;
 
-import org.joda.time.Interval;
-
 import javafx.application.Application;
-import javafx.beans.property.ReadOnlyBooleanWrapper;
-import javafx.beans.property.ReadOnlyDoubleWrapper;
-import javafx.beans.property.ReadOnlyIntegerWrapper;
-import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.DatePicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.TableColumn;
+import javafx.scene.control.TablePosition;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.cell.PropertyValueFactory;
@@ -36,6 +33,15 @@ import javafx.stage.Stage;
 public class Booking extends Application{
 
 	private static Statement st;
+	TableView<Room> details = new TableView<Room>();
+	DatePicker checkIn = new DatePicker();
+	DatePicker checkOut = new DatePicker();
+	ComboBox<Integer> guests = new ComboBox<Integer>();
+	TextField firstName = new TextField();
+	TextField surName = new TextField();
+	TextField telNo = new TextField();
+	
+
 
 	/**
 	 * @return the st
@@ -75,9 +81,8 @@ public class Booking extends Application{
 
 		HBox textFields = new HBox();
 
-		ComboBox<Integer> guests = new ComboBox<Integer>();
-		DatePicker checkIn = new DatePicker();
-		DatePicker checkOut = new DatePicker();
+		
+		
 
 		guests.setItems(FXCollections.observableList(Arrays.asList(new Integer[] {1,2,3,4,5,6})));
 
@@ -169,17 +174,24 @@ public class Booking extends Application{
 				f.printStackTrace();
 			}
 			
-			TableView<Integer> details = new TableView<Integer>();
 			
-			TableColumn<Integer, Number> singleBeds = new TableColumn<>("Number of Single Beds");
-			TableColumn<Integer, Number> doubleBeds = new TableColumn<>("Number of Double Beds");
-			TableColumn<Integer, String> pricing = new TableColumn<>("Total Price");
-			TableColumn<Integer, String> mView = new TableColumn<>("Mountain View");
-			TableColumn<Integer, String> oView = new TableColumn<>("Ocean View");
-			TableColumn<Integer, String> balconyView = new TableColumn<>("Balcony");
+			TableColumn singleBeds = new TableColumn<>("Number of Single Beds");
+			TableColumn doubleBeds = new TableColumn<>("Number of Double Beds");
+			TableColumn pricing = new TableColumn<>("Total Price");
+			TableColumn mView = new TableColumn<>("Mountain View");
+			TableColumn oView = new TableColumn<>("Ocean View");
+			TableColumn balconyView = new TableColumn<>("Balcony");
 			
+			singleBeds.setCellValueFactory(new PropertyValueFactory<Room, Integer>("numberOfSingles"));
+			doubleBeds.setCellValueFactory(new PropertyValueFactory<Room, Integer>("numberOfDoubles"));
+			pricing.setCellValueFactory(new PropertyValueFactory<Room, Double>("price"));
+			mView.setCellValueFactory(new PropertyValueFactory<Room, String>("mView"));
+			oView.setCellValueFactory(new PropertyValueFactory<Room, String>("oView"));
+			balconyView.setCellValueFactory(new PropertyValueFactory<Room, String>("bView"));
+			
+			details.setItems(FXCollections.observableList(availableRooms));
 
-			List<Integer> s = new ArrayList<Integer>();
+			/*List<Integer> s = new ArrayList<Integer>();
 			List<Integer> s2 = new ArrayList<Integer>();
 			List<String> s3 = new ArrayList<String>();
 			List<String> s4 = new ArrayList<String>();
@@ -229,7 +241,7 @@ public class Booking extends Application{
 	            return new ReadOnlyStringWrapper((s6.get(rowIndex).equalsIgnoreCase("true")) ? "✓" : "x");
 	        });
 	        
-	        
+	        */
 			details.getColumns().add(singleBeds);
 			details.getColumns().add(doubleBeds);
 			details.getColumns().add(pricing);
@@ -254,14 +266,13 @@ public class Booking extends Application{
 		
 		HBox root3 = new HBox();
 		Scene scene3 = new Scene(root3, 640, 400);
+		
+		Button confirm = new Button("Confirm");
 
 		select.setOnAction(e -> 
 		{
 			primaryStage.setScene(scene3);
 			
-			TextField firstName = new TextField();
-			TextField surName = new TextField();
-			TextField telNo = new TextField();
 			
 			VBox name = new VBox();
 			VBox lastName = new VBox();
@@ -282,7 +293,65 @@ public class Booking extends Application{
 			root3.getChildren().addAll(name, lastName, number);
 			root3.setAlignment(Pos.CENTER);
 			root3.setSpacing(20);
+			
+			confirm.setAlignment(Pos.CENTER);
+			
+			root3.getChildren().add(confirm);
 
+		});
+		
+		HBox root4 = new HBox();
+		Scene scene4 = new Scene(root4, 640, 400);
+		
+		confirm.setOnAction(e ->
+		{
+			primaryStage.setScene(scene4);
+			
+			Room selectedRoom = details.getSelectionModel().getSelectedItem();
+			
+			int custID = 0;
+			
+			try {
+				
+				st.executeUpdate("INSERT INTO CustomerDetails (firstName, surName, telno) "
+						+ "VALUES ('" + firstName.getText() + "', '" + surName.getText() + "', " + telNo.getText() + ")");
+				
+				ResultSet rs5 = st.executeQuery("SELECT customerID FROM CustomerDetails "
+						+ "WHERE firstName = '" + firstName.getText() + "'"
+								+ "AND surName = '" + surName.getText() + "' "
+										+ "AND telNo = " + telNo.getText() + "");
+				
+				if(rs5.next())
+				{
+					custID = rs5.getInt("customerID");
+				}
+				
+				st.executeUpdate("INSERT INTO Reservation "
+				+ "VALUES (" + selectedRoom.getRoomNumber() + ", '" + checkIn.getValue() + "', '" + checkOut.getValue() + "', " + guests.getValue() + ", " + custID + ")");
+				
+			} catch (SQLException e1) {
+				
+				e1.printStackTrace();
+			}
+			
+			
+			Label confirmation = new Label("Your booking was successful");
+			root4.getChildren().add(confirmation);
+			
+			root4.setAlignment(Pos.CENTER);
+			
+			TablePosition tp = details.getFocusModel().getFocusedCell();
+			
+			int tr = tp.getRow();
+			TableColumn tc = tp.getTableColumn();
+			
+			String a = details.getColumns().get(0).getCellObservableValue(0).getValue().toString(); 
+			Object object =  details.getSelectionModel().selectedItemProperty().get();
+			int index = details.getSelectionModel().selectedIndexProperty().get(); 
+
+			System.out.println(object);
+			System.out.println(a);
+			
 		});
 		
 		primaryStage.show();
@@ -293,25 +362,75 @@ public class Booking extends Application{
 		launch(args);
 	}
 
-	class Room 
+	public static class Room 
 	{
 		private int roomNumber;
-		private int numberOfSingles;
-		private int numberOfDoubles;
-		private boolean oceanView;
-		private boolean mountainView;
-		private boolean balcony;
-		private double price;
+		private SimpleIntegerProperty numberOfSingles;
+		private SimpleIntegerProperty numberOfDoubles;
+		private SimpleBooleanProperty oceanView;
+		private SimpleBooleanProperty mountainView;
+		private SimpleBooleanProperty balcony;
+		private SimpleDoubleProperty price;
+		
+		private SimpleStringProperty oView;
+		/**
+		 * @return the oView
+		 */
+		public String getoView() {
+			return oView.get();
+		}
 
-		public Room( int roomNumber, int numberOfSingles, int numberOfDoubles, boolean oceanView, boolean mountainView, boolean balcony, double price)
+		/**
+		 * @param oView the oView to set
+		 */
+		public void setoView(SimpleStringProperty oView) {
+			this.oView.set(oView.get());
+		}
+
+		/**
+		 * @return the mView
+		 */
+		public String getmView() {
+			return mView.get();
+		}
+
+		/**
+		 * @param mView the mView to set
+		 */
+		public void setmView(SimpleStringProperty mView) {
+			this.mView.set(mView.get());
+		}
+
+		/**
+		 * @return the bView
+		 */
+		public String getbView() {
+			return bView.get();
+		}
+
+		/**
+		 * @param bView the bView to set
+		 */
+		public void setbView(SimpleStringProperty bView) {
+			this.bView.set(bView.get());
+		}
+
+		private SimpleStringProperty mView;
+		private SimpleStringProperty bView;
+
+		private Room( int roomNumber, int numberOfSingles, int numberOfDoubles, boolean oceanView, boolean mountainView, boolean balcony, double price)
 		{
 			this.roomNumber = roomNumber;
-			this.numberOfSingles = numberOfSingles;
-			this.numberOfDoubles = numberOfDoubles;
-			this.oceanView = oceanView;
-			this.mountainView = mountainView;
-			this.balcony = balcony;
-			this.price = price;
+			this.numberOfSingles = new SimpleIntegerProperty(numberOfSingles);
+			this.numberOfDoubles = new SimpleIntegerProperty(numberOfDoubles);
+			this.oceanView = new SimpleBooleanProperty(oceanView);
+			this.mountainView = new SimpleBooleanProperty(mountainView);
+			this.balcony = new SimpleBooleanProperty(balcony);
+			this.price = new SimpleDoubleProperty(price);
+			
+			this.oView = (oceanView) ? new SimpleStringProperty("✓") : new SimpleStringProperty("x"); 
+			this.mView = (mountainView) ? new SimpleStringProperty("✓") : new SimpleStringProperty("x");
+			this.bView = (balcony) ? new SimpleStringProperty("✓") : new SimpleStringProperty("x");
 		}
 
 		public String toString()
@@ -327,6 +446,90 @@ public class Booking extends Application{
 		}
 
 		/**
+		 * @return the numberOfSingles
+		 */
+		public int getNumberOfSingles() {
+			return numberOfSingles.get();
+		}
+
+		/**
+		 * @param numberOfSingles the numberOfSingles to set
+		 */
+		public void setNumberOfSingles(SimpleIntegerProperty numberOfSingles) {
+			this.numberOfSingles.set(numberOfSingles.get());
+		}
+
+		/**
+		 * @return the numberOfDoubles
+		 */
+		public int getNumberOfDoubles() {
+			return numberOfDoubles.get();
+		}
+
+		/**
+		 * @param numberOfDoubles the numberOfDoubles to set
+		 */
+		public void setNumberOfDoubles(SimpleIntegerProperty numberOfDoubles) {
+			this.numberOfDoubles.set(numberOfDoubles.get());
+		}
+
+		/**
+		 * @return the oceanView
+		 */
+		public boolean getOceanView() {
+			return oceanView.get();
+		}
+
+		/**
+		 * @param oceanView the oceanView to set
+		 */
+		public void setOceanView(SimpleBooleanProperty oceanView) {
+			this.oceanView.set(oceanView.get());
+		}
+
+		/**
+		 * @return the mountainView
+		 */
+		public boolean getMountainView() {
+			return mountainView.get();
+		}
+
+		/**
+		 * @param mountainView the mountainView to set
+		 */
+		public void setMountainView(SimpleBooleanProperty mountainView) {
+			this.mountainView.set(mountainView.get());
+		}
+
+		/**
+		 * @return the balcony
+		 */
+		public boolean getBalcony() {
+			return balcony.get();
+		}
+
+		/**
+		 * @param balcony the balcony to set
+		 */
+		public void setBalcony(SimpleBooleanProperty balcony) {
+			this.balcony.set(balcony.get());
+		}
+
+		/**
+		 * @return the price
+		 */
+		public double getPrice() {
+			return price.get();
+		}
+
+		/**
+		 * @param price the price to set
+		 */
+		public void setPrice(SimpleDoubleProperty price) {
+			this.price.set(price.get());
+		}
+
+		/**
 		 * @param roomNumber the roomNumber to set
 		 */
 		public void setRoomNumber(int roomNumber) {
@@ -334,88 +537,9 @@ public class Booking extends Application{
 		}
 
 		/**
-		 * @return the numberOfSingles
+		 * @param roomNumber the roomNumber to set
 		 */
-		public int getNumberOfSingles() {
-			return numberOfSingles;
-		}
-
-		/**
-		 * @param numberOfSingles the numberOfSingles to set
-		 */
-		public void setNumberOfSingles(int numberOfSingles) {
-			this.numberOfSingles = numberOfSingles;
-		}
-
-		/**
-		 * @return the numberOfDoubles
-		 */
-		public int getNumberOfDoubles() {
-			return numberOfDoubles;
-		}
-
-		/**
-		 * @param numberOfDoubles the numberOfDoubles to set
-		 */
-		public void setNumberOfDoubles(int numberOfDoubles) {
-			this.numberOfDoubles = numberOfDoubles;
-		}
-
-		/**
-		 * @return the oceanView
-		 */
-		public boolean isOceanView() {
-			return oceanView;
-		}
-
-		/**
-		 * @param oceanView the oceanView to set
-		 */
-		public void setOceanView(boolean oceanView) {
-			this.oceanView = oceanView;
-		}
-
-		/**
-		 * @return the mountainView
-		 */
-		public boolean isMountainView() {
-			return mountainView;
-		}
-
-		/**
-		 * @param mountainView the mountainView to set
-		 */
-		public void setMountainView(boolean mountainView) {
-			this.mountainView = mountainView;
-		}
-
-		/**
-		 * @return the balcony
-		 */
-		public boolean isBalcony() {
-			return balcony;
-		}
-
-		/**
-		 * @param balcony the balcony to set
-		 */
-		public void setBalcony(boolean balcony) {
-			this.balcony = balcony;
-		}
-
-		/**
-		 * @return the price
-		 */
-		public double getPrice() {
-			return price;
-		}
-
-		/**
-		 * @param price the price to set
-		 */
-		public void setPrice(double price) {
-			this.price = price;
-		}
+		
 	}
-
+	
 }

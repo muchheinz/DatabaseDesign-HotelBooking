@@ -49,7 +49,7 @@ public class Database {
 				+ "PRIMARY KEY(roomNo))");
 		
 		st.executeUpdate("CREATE TABLE if not exists CustomerDetails ("
-				+ "customerID INT NOT NULL UNIQUE,"
+				+ "customerID INT AUTO_INCREMENT,"
 				+ "firstName VARCHAR(20),"
 				+ "surName VARCHAR(20),"
 				+ "telNo INT NOT NULL UNIQUE,"
@@ -60,7 +60,7 @@ public class Database {
 						+ "checkInDate DATE NOT NULL,"
 						+ "checkOutDate DATE NOT NULL,"
 						+ "noOfGuests INT NOT NULL,"
-						+ "customerID INT NOT NULL UNIQUE,"
+						+ "customerID INT NOT NULL,"
 						+ "PRIMARY KEY(customerID),"
 						+ "FOREIGN KEY(roomNo) references Rooms(roomNo),"
 						+ "FOREIGN KEY(customerID) references CustomerDetails(customerID))");
