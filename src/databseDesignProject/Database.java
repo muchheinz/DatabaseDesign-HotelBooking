@@ -64,6 +64,14 @@ public class Database {
 						+ "PRIMARY KEY(customerID),"
 						+ "FOREIGN KEY(roomNo) references Rooms(roomNo),"
 						+ "FOREIGN KEY(customerID) references CustomerDetails(customerID))");
+		
+		st.executeUpdate("CREATE TABLE if not exists paymentDetails ("
+						+ "customerID INT NOT NULL, "
+						+ "cardNumber VARCHAR(10) NOT NULL,"
+						+ "paymentMethod SET('Visa', 'Debit', 'Credit'),"
+						+ "amount INT NOT NULL,"
+						+ "PRIMARY KEY(customerID),"
+						+ "FOREIGN KEY(customerID) references CustomerDetails(customerID))");
 
 		
 	}
@@ -109,33 +117,11 @@ public class Database {
 				 
 				catch(Exception e)
 				{
-					System.out.println("Already Existing");
+					//System.out.println("Already Existing");
 				}
 			}		
 		}
-		
-		try {
-			
-			st.executeUpdate("INSERT INTO CustomerDetails "
-					+ "VALUES (1047891, 'Jane', 'Murray', 0878947391), "
-					+ "(1047894, 'Andrew', 'Morrissey', 0865473812), "
-					+ "(1047899, 'Louise', 'Kent', 0872349874)");
-			
-			st.executeUpdate("INSERT INTO Reservation "
-					+ "VALUES (129, '2018-03-29' ,'2018-04-02', 4, 1047891), "
-					+ "(104, '2018-03-25', '2018-03-29', 6, 1047894), "
-					+ "(210, '2018-04-09', '2018-04-15', 5, 1047899)");
-		}
-		
-		catch(Exception e)
-		{
-			System.out.println("Duplicates");
-		}
-		
-		
-		
-				
-		
+
 	}
 
 
